@@ -10,6 +10,17 @@ class VAE(object):
     def __init__(self, latent_dim, batch_size,
                  encoder_architecture,
                  decoder_architecture):
+        """
+        Implementation of Variational Autoencoder (VAE) for  MNIST,
+        as outlined in https://arxiv.org/abs/1312.6114.
+
+        :param latent_dim: (int) Dimension of latent space.
+        :param batch_size: (int) Number of data points per mini batch.
+        :param encoder_architecture: (str) Which encoder architecture to use.
+            One of 'fc' or 'conv'.
+        :param decoder_architecture: (str) Which decoder architecture to use.
+            One of 'fc' or 'conv'.
+        """
         self._latent_dim = latent_dim
         self._batch_size = batch_size
         self._encoder_architecture = encoder_architecture
@@ -30,8 +41,7 @@ class VAE(object):
                         layers.conv2d, layers.conv2d_transpose],
                        activation_fn=tf.nn.relu):
             # encode inputs (map to parameterization of diagonal Gaussian)
-            self.encoded = self._encode(self.x, 2 * self._latent_dim,
-                                        architecture=self._encoder_architecture)
+            self.encoded = self._encode(self.x)
 
         # extract mean and (diagonal) log variance of latent variable
         self.mean = self.encoded[:, :self._latent_dim]
@@ -53,7 +63,7 @@ class VAE(object):
                         layers.conv2d, layers.conv2d_transpose],
                        activation_fn=tf.nn.relu):
             # decode sample
-            self.decoded = self._decode(self.z, architecture=self._decoder_architecture)
+            self.decoded = self._decode(self.z)
 
         # calculate reconstruction error between decoded sample
         # and original input batch
@@ -69,23 +79,21 @@ class VAE(object):
         init = tf.global_variables_initializer()
         self._sesh.run(init)
 
-    @staticmethod
-    def _encode(x, latent_dim, architecture='fc'):
+    def _encode(self, x):
         """
-        Inference network q(z|x) which encoded a mini batch of data points.
-        :param x: mini batch of data points to encode
-        :param latent_dim: dimension of latent space
-        :param architecture: which encoder architecture to use,
-            either fully connected ('fc'), or convolutional ('conv')
-        :return: encoded: encoded mini batch
+        Inference network q(z|x) which encodes a mini batch of data points.
+
+        :param x: (tf.Tensor(tf.float32) Mini batch of data points to encode.
+        :return: encoded: (tf.Tensor(tf.float32)) Encoded mini batch.
         """
-        if architecture == 'fc':
+        if self._encoder_architecture == 'fc':
             encoded = layers.fully_connected(x, 500)
             encoded = layers.fully_connected(encoded, 500)
             encoded = layers.fully_connected(encoded, 200)
-            encoded = layers.fully_connected(encoded, latent_dim, activation_fn=None)
+            encoded = layers.fully_connected(encoded, 2 * self._latent_dim,
+                                             activation_fn=None)
 
-        elif architecture == 'conv':
+        elif self._encoder_architecture == 'conv':
             encoded = tf.reshape(x, [-1, 28, 28, 1])
             encoded = layers.conv2d(encoded, 32, 5, stride=2)
             encoded = layers.conv2d(encoded, 64, 5, stride=2)
@@ -93,8 +101,8 @@ class VAE(object):
             encoded = layers.flatten(encoded)
             encoded = layers.fully_connected(encoded, 500)
             encoded = layers.fully_connected(encoded, 200)
-            encoded = layers.fully_connected(encoded, latent_dim, activation_fn=None)
-            return encoded
+            encoded = layers.fully_connected(encoded, 2 * self._latent_dim,
+                                             activation_fn=None)
 
         else:
             raise ValueError("Invalid encoder architecture specified!"
@@ -102,24 +110,22 @@ class VAE(object):
 
         return encoded
 
-    @staticmethod
-    def _decode(z, architecture='fc'):
+    def _decode(self, z):
         """
-        Generative network p(x|z) which decodes a random sample from
+        Generative network p(x|z) which decodes a sample z from
         the latent space.
-        :param z: latent variable sampled from latent space
-        :param architecture: which decoder architecture to use,
-            either fully connected ('fc'), or convolutional ('conv')
-        :return: decoded: decoded latent variable
+
+        :param z: (tf.Tensor(tf.float32)) Latent variable sampled from latent space.
+        :return: decoded: (tf.Tensor(tf.float32)) Decoded latent variable.
         """
-        if architecture == 'fc':
+        if self._decoder_architecture == 'fc':
             decoded = layers.fully_connected(z, 200)
             decoded = layers.fully_connected(decoded, 500)
             decoded = layers.fully_connected(decoded, 500)
             decoded = layers.fully_connected(decoded, 28 * 28,
                                              activation_fn=tf.nn.sigmoid)
 
-        elif architecture == 'conv':
+        elif self._decoder_architecture == 'conv':
             decoded = tf.expand_dims(z, 1)
             decoded = tf.expand_dims(decoded, 1)
             decoded = layers.conv2d_transpose(decoded, 128, 3, padding='VALID')
@@ -128,11 +134,11 @@ class VAE(object):
             decoded = layers.conv2d_transpose(decoded, 1, 5, stride=2,
                                               activation_fn=tf.nn.sigmoid)
             decoded = layers.flatten(decoded)
-            return decoded
 
         else:
             raise ValueError("Invalid decoder architecture!"
                              "Must be one of 'fc' or 'conv'.")
+
         return decoded
 
     @staticmethod
@@ -141,10 +147,12 @@ class VAE(object):
         Calculates KL Divergence between q~N(mu, sigma^T * I) and p~N(0, I).
         q(z|x) is the approximate posterior over the latent variable z,
         and p(z) is the prior on z.
-        :param mu: mean of approximate posterior.
-        :param sigma: standard deviation of approximate posterior.
-        :param eps: small value to prevent log(0).
-        :return: kl: KL Divergence between q and p.
+
+        :param mu: (tf.Tensor(tf.float32)) Mean of z under approximate posterior.
+        :param sigma: (tf.Tensor(tf.float32)) Standard deviation of z
+            under approximate posterior.
+        :param eps: (float) Small value to prevent log(0).
+        :return: kl: (float) KL Divergence between q(z|x) and p(z).
         """
         var = tf.square(sigma)
         kl = 0.5 * tf.reduce_sum(tf.square(mu) + var - 1. - tf.log(var + eps))
@@ -153,12 +161,13 @@ class VAE(object):
     @staticmethod
     def _reconstruction_error(targets, outputs, eps=1e-8):
         """
-        Calculates negative log probability of outputs under a
-        Bernoulli distribution.
-        :param targets: binarized MNIST images.
-        :param outputs: probability distribution over outputs.
-        :return: rec_error: negative log probability of outputs under
-        a Bernoulli assumption.
+        Calculates negative log likelihood -log(p(x|z)) of outputs,
+        assuming a Bernoulli distribution.
+
+        :param targets: (tf.Tensor(tf.float32)) MNIST images.
+        :param outputs: (tf.Tensor(tf.float32)) Probability distribution over outputs.
+        :return: rec_error: (float) -log(p(x|z)) (negative log likelihood or
+            'reconstruction error')
         """
         rec_error = -tf.reduce_sum(targets * tf.log(outputs + eps)
                                    + (1. - targets) * tf.log((1. - outputs) + eps))
@@ -168,17 +177,19 @@ class VAE(object):
         """
         Performs one mini batch update of parameters for both inference
         and generative networks.
-        :param x: mini batch of input data points
-        :return: loss: total loss (KL + reconstruction) for mini batch
+
+        :param x: (tf.Tensor(tf.float32)) Mini batch of input data points.
+        :return: loss: (float) Total loss (KL + reconstruction) for mini batch.
         """
         _, loss = self._sesh.run([self._train, self._loss],
                                  feed_dict={self.x: x})
         return loss
 
-    def infer(self, x):
+    def embed(self, x):
         """
         Maps a data point x to mean in latent space.
-        :return: mean: mean of z i.e. q(z|x)~N(mean, .)
+
+        :return: mean: (tf.Tensor(tf.float32)) mu such that q(z|x)~N(mu, .).
         """
         mean = self._sesh.run([self.mean], feed_dict={self.x: x})
         return mean
@@ -186,8 +197,9 @@ class VAE(object):
     def generate(self, z):
         """
         Maps a point in latent space to an image.
-        :param z: point in latent space
-        :return: x: corresponding image generated from z
+
+        :param z: (tf.Tensor(tf.float32)) Point in latent space.
+        :return: x: (tf.Tensor(tf.float32)) Corresponding image generated from z.
         """
         x = self._sesh.run([self.decoded],
                            feed_dict={self.z: z})

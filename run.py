@@ -26,6 +26,7 @@ def main():
 
     FLAGS = flags.FLAGS
 
+    # define model
     kwargs = {
         'latent_dim': FLAGS.latent_dim,
         'batch_size': FLAGS.batch_size,
@@ -34,10 +35,11 @@ def main():
     }
     vae = VAE(**kwargs)
 
+    # read data
     mnist = input_data.read_data_sets(train_dir=FLAGS.data_dir, one_hot=True)
 
+    # set up progress bar
     tbar = tqdm(range(FLAGS.epochs))
-
     for epoch in tbar:
         training_loss = 0.
 
@@ -46,7 +48,9 @@ def main():
             loss = vae.update(x)
             training_loss += loss
 
+        # loss over most recent epoch
         training_loss /= (FLAGS.batch_size * FLAGS.updates_per_epoch)
+        # update progress bar
         s = "Loss: {:.4f}".format(training_loss)
         tbar.set_description(s)
 
