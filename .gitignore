@@ -5,9 +5,9 @@ figs/canvas/*
 figs/spread/*
 !figs/spread/.gitkeep
 
-__pycache__/
+vae/__pycache__
 
-*idea/
+.idea
 
 
 
