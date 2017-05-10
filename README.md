@@ -31,7 +31,7 @@ The first gif shows how 5000 test images are embedded in the latent space over 1
 ![](spread.gif)
 
 The second gif shows the result of decoding a grid of points in the latent space at each epoch of training (this example rendered in log time).
-![](canvas.gif)
+![aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa](canvas.gif)
 
 Note the correspondence in class distribution between the two visualisations. It's also important to note that lower loss is achievable using a slightly bigger learning rate, but the visualisations suffer a bit since the convergence is too fast.
 
