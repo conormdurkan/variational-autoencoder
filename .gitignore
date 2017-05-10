@@ -1,4 +1,8 @@
-*.pyc
-latent/
-*.pdf
-*.gif
+mnist/
+
+figs/canvas/*
+!figs/canvas/.gitkeep
+figs/spread/*
+!figs/spread/.gitkeep
+
+vae/*.pyc
