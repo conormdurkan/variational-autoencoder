@@ -28,10 +28,10 @@ If you'd prefer not to generate `2 * epochs` images and corresponding gifs, then
 Plotting functionality is included for visualising a 2-D latent space. This runs by default whenever the latent dimension is 2.
 
 The first gif shows how 5000 test images are embedded in the latent space over 100 epochs of training.
-![](spread.gif =250x250)
+![](spread.gif)
 
 The second gif shows the result of decoding a grid of points in the latent space at each epoch of training (this example rendered in log time).
-![](canvas.gif =250x250)
+![](canvas.gif)
 
 Note the correspondence in class distribution between the two visualisations. It's also important to note that lower loss is achievable using a slightly bigger learning rate, but the visualisations suffer a bit since the convergence is too fast.
 
