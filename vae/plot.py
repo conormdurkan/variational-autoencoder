@@ -87,6 +87,9 @@ def make_spread(vae, provider, epoch):
     for i, mean in enumerate(means):
         ax.annotate(str(i), xy=mean, size=16,
                     bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+    # annotate epoch
+    ax.annotate("Epoch " + str(epoch), xy=(3.1, 4.4), size=25,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=1.))
 
     # plot details
     ax.set_xlim([-5, 5])

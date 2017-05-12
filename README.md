@@ -18,7 +18,7 @@ Defaults for the model are as follows:
 | Data directory | `data_dir`      |  '../mnist'   |
 | Perform visualisation | `do_viz`|    True |
 
-Architectures can be 'fc' or 'conv' for each of the encoder and decoder.
+Architectures can be `'fc'` or `'conv'` for each of the encoder and decoder.
 
 The MNIST data set will be automatically downloaded to `data_dir` if the data is not found in this directory. Change to your own location if you don't want multiple copies of MNIST hanging around.
 
@@ -33,7 +33,7 @@ The first gif shows how 5000 test images are embedded in the latent space over 1
 The second gif shows the result of decoding a grid of points in the latent space at each epoch of training (this example rendered in log time).
 ![aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa](canvas.gif)
 
-Note the correspondence in class distribution between the two visualisations. It's also important to note that lower loss is achievable using a slightly bigger learning rate, but the visualisations suffer a bit since the convergence is too fast.
+Lower loss is achievable using a slightly bigger learning rate, but the visualisations suffer a bit since the convergence is too fast.
 
 ## References
 The implementation was based on the two (immensely helpful) resources:

@@ -64,8 +64,8 @@ def main():
             loss = vae.update(x)
             training_loss += loss
 
-        # loss over most recent epoch
-        training_loss /= (FLAGS.batch_size * FLAGS.updates_per_epoch)
+        # average loss over most recent epoch
+        training_loss /= (FLAGS.updates_per_epoch)
         # update progress bar
         s = "Loss: {:.4f}".format(training_loss)
         tbar.set_description(s)
